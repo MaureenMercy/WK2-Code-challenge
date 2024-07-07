@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shopping List</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        #shopping-list {
+            list-style-type: none;
+            padding: 0;
+        }
+        .purchased {
+            text-decoration: line-through;
+            background-color: #f0f0f0;
+        }
+        .list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+        }
+        .edit-input {
+            flex-grow: 1;
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Shopping List</h1>
+    <input type="text" id="item-input" placeholder="Enter item">
+    <button id="add-btn">Add</button>
+    <button id="clear-btn">Clear List</button>
+    <ul id="shopping-list"></ul>
+
+    <script>
+        const itemInput = document.getElementById('item-input');
+        const addBtn = document.getElementById('add-btn');
+        const clearBtn = document.getElementById('clear-btn');
+        const shoppingList = document.getElementById('shopping-list');
+        let items = JSON.parse(localStorage.getItem('shoppingList')) || [];
+
+        function renderList() {
+            shoppingList.innerHTML = '';
+            items.forEach((item, index) => {
+                const li = document.createElement('li');
+                li.className = 'list-item';
+                if (item.purchased) li.classList.add('purchased');
+                li.innerHTML = `
+                    <span>${item.name}</span>
+                    <div>
+                        <button class="edit-btn">Edit</button>
+                        <button class="purchase-btn">${item.purchased ? 'Unpurchase' : 'Purchase'}</button>
+                        <button class="delete-btn">Delete</button>
+                    </div>
+                `;
+                shoppingList.appendChild(li);
+
+                li.querySelector('.edit-btn').addEventListener('click', () => editItem(index));
+                li.querySelector('.purchase-btn').addEventListener('click', () => togglePurchase(index));
+                li.querySelector('.delete-btn').addEventListener('click', () => deleteItem(index));
+            });
+            saveToLocalStorage();
+        }
+
+        function addItem() {
+            const itemName = itemInput.value.trim();
+            if (itemName) {
+                items.push({ name: itemName, purchased: false });
+                itemInput.value = '';
+                renderList();
+            }
+        }
+
+        function editItem(index) {
+            const li = shoppingList.children[index];
+            const span = li.querySelector('span');
+            const editInput = document.createElement('input');
+            editInput.type = 'text';
+            editInput.className = 'edit-input';
+            editInput.value = items[index].name;
+            li.insertBefore(editInput, span);
+            li.removeChild(span);
+
+            function saveEdit() {
+                items[index].name = editInput.value;
+                renderList();
+            }
+
+            editInput.addEventListener('blur', saveEdit);
+            editInput.addEventListener('keyup', (e) => {
+                if (e.key === 'Enter') saveEdit();
+            });
+            editInput.focus();
+        }
+
+        function togglePurchase(index) {
+            items[index].purchased = !items[index].purchased;
+            renderList();
+        }
+
+        function deleteItem(index) {
+            items.splice(index, 1);
+            renderList();
+        }
+
+        function clearList() {
+            items = [];
+            renderList();
+        }
+
+        function saveToLocalStorage() {
+            localStorage.setItem('shoppingList', JSON.stringify(items));
+        }
+
+        addBtn.addEventListener('click', addItem);
+        clearBtn.addEventListener('click', clearList);
+        itemInput.addEventListener('keyup', (e) => {
+            if (e.key === 'Enter') addItem();
+        });
+
+        renderList();
+    </script>
+</body>
+</html>
